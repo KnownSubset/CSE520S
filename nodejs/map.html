@@ -19,36 +19,61 @@
     };
     var $map = $("div#map_canvas");
     var map = new google.maps.Map($map[0], myOptions);
-
+    var stuff = loadData();
+    var data = {};
+    data.longitude = 150.644;
+    data.latitude = -34.397;
+    data.message = "hi";
+    addMarker(data, map);
   });
-  drawData = function (data) {
+  drawData = function (data, map) {
     $(data).each(function($this){
-      
+      addMarker($this, map);
     });
   }
-  addMarker = function(data){
+  addMarker = function(data, map){
+    var image = 'images/circle_blue.png';
+    if (data.type == "heat"){
+      image = 'images/circle_blue.png';
+    }else if(data.type == "light"){
+      image = 'images/circle_yellow.png';
+    }else if(data.type == "heat"){
+      image = 'images/circle_orange.png';
+    }else if(data.type == "heat"){
+      image = 'images/circle_green.png';
+    }
     var latLng = new google.maps.LatLng(data.latitude,data.longitude);
     var marker = new google.maps.Marker({
       position: latLng, 
       map: map,
-      title:data.message
+      title:data.message,
+      icon: image
     });
 
   }
-//   function initialize() {
-//     var latlng = new google.maps.LatLng(-34.397, 150.644);
-//     var myOptions = {
-//       zoom: 8,
-//       center: latlng,
-//       mapTypeId: google.maps.MapTypeId.ROADMAP
-//     };
-//     var map = new google.maps.Map(document.getElementById("map_canvas"),
-//         myOptions);
-//   }
+  loadData = function(){
+    $.ajax({
+      url: "http://localhost:1337",
+      success: function(data){
+	console.log("HI from ajax");
+	return data;
+      }
+    });
+  }
 
 </script>
 </head>
 <body>
+  <div id="checkboxes">
+    <label for="height">Height</label>
+    <input id="height" type="checkbox"></input>
+    <label for="heat">Heat</label>
+    <input id="heat" type="checkbox"></input>
+    <label for="light">Light</label>
+    <input id="light" type="checkbox"></input>
+    <label for="pressure">Pressure</label>
+    <input id="pressure" type="checkbox"></input>
+  </div>
   <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>
 </html>
