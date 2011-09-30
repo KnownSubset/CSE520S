@@ -19,7 +19,7 @@
     };
     var $map = $("div#map_canvas");
     var map = new google.maps.Map($map[0], myOptions);
-    var stuff = loadData();
+    var stuff = loadData(map);
     var data = {};
     data.longitude = 150.644;
     data.latitude = -34.397;
@@ -28,7 +28,7 @@
   });
   drawData = function (data, map) {
     $(data).each(function($this){
-      addMarker($this, map);
+      addMarker(this, map);
     });
   }
   addMarker = function(data, map){
@@ -51,12 +51,17 @@
     });
 
   }
-  loadData = function(){
+  loadData = function(map){
     $.ajax({
-      url: "http://localhost:1337",
-      success: function(data){
-	console.log("HI from ajax");
-	return data;
+      accepts : "text/json",
+      dataType : "json",
+      context: document.body,
+      async: false,
+      url: "http://localhost:1337/",
+      //url: "http://maps.googleapis.com/maps/api/geocode/json?latlng=40.714224,-73.961452",
+      success: function( data ) {
+	drawData(data.items, map);
+
       }
     });
   }
@@ -65,14 +70,10 @@
 </head>
 <body>
   <div id="checkboxes">
-    <label for="height">Height</label>
-    <input id="height" type="checkbox"></input>
-    <label for="heat">Heat</label>
-    <input id="heat" type="checkbox"></input>
-    <label for="light">Light</label>
-    <input id="light" type="checkbox"></input>
-    <label for="pressure">Pressure</label>
-    <input id="pressure" type="checkbox"></input>
+    <label for="height">Height</label><input id="height" type="checkbox"></input>
+    <label for="heat">Heat</label><input id="heat" type="checkbox"></input>
+    <label for="light">Light</label><input id="light" type="checkbox"></input>
+    <label for="pressure">Pressure</label><input id="pressure" type="checkbox"></input>
   </div>
   <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>
