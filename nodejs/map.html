@@ -34,13 +34,11 @@
   addMarker = function(data, map){
     var image = 'images/circle_blue.png';
     if (data.type == "heat"){
-      image = 'images/circle_blue.png';
+      image = 'images/circle_red.png';
     }else if(data.type == "light"){
-      image = 'images/circle_yellow.png';
-    }else if(data.type == "heat"){
-      image = 'images/circle_orange.png';
-    }else if(data.type == "heat"){
       image = 'images/circle_green.png';
+    }else if(data.type == "pressure"){
+      image = 'images/circle_orange.png';
     }
     var latLng = new google.maps.LatLng(data.latitude,data.longitude);
     var marker = new google.maps.Marker({
@@ -55,10 +53,7 @@
     $.ajax({
       accepts : "text/json",
       dataType : "json",
-      context: document.body,
-      async: false,
       url: "http://localhost:1337/",
-      //url: "http://maps.googleapis.com/maps/api/geocode/json?latlng=40.714224,-73.961452",
       success: function( data ) {
 	drawData(data.items, map);
 
