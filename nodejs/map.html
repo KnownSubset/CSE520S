@@ -10,6 +10,11 @@
 <script type="text/javascript" src="js/google.maps.api.3.0.js"></script>
 <script type="text/javascript" src="js/jquery-1.6.4.min.js"></script>
 <script type="text/javascript">
+  var heats = new Array();
+  var heights = new Array();
+  var lights = new Array();
+  var pressures = new Array();
+
   $(document).ready(function(){
     var latlng = new google.maps.LatLng(-34.397, 150.644);
     var myOptions = {
@@ -19,12 +24,17 @@
     };
     var $map = $("div#map_canvas");
     var map = new google.maps.Map($map[0], myOptions);
-    var stuff = loadData(map);
-    var data = {};
-    data.longitude = 150.644;
-    data.latitude = -34.397;
-    data.message = "hi";
-    addMarker(data, map);
+    //loadData(map);
+    $("div#checkboxes input:checkbox").click(function(){
+	var checkbox = $(this);	
+	if (.is(':checked')) {
+//	  checkbox.
+	} else {
+	  $(getArrayForType(this)).each(function(){
+	     this.setMap(null);
+	  });
+	}
+    });
   });
   drawData = function (data, map) {
     $(data).each(function($this){
@@ -32,6 +42,37 @@
     });
   }
   addMarker = function(data, map){
+    var image = getImage(data);
+    var latLng = new google.maps.LatLng(data.latitude,data.longitude);
+    var marker = new google.maps.Marker({
+      position: latLng, 
+      map: map,
+      title:data.message,
+      icon: image
+    });
+    getArrayForType(data.type).push(marker);
+  }
+  loadData = function(map, type){
+    $.ajax({
+      accepts : "text/json",
+      dataType : "json",
+      url: "http://localhost:1337/",
+      success: function( data ) {
+	drawData(data.items, map);
+      }
+    });
+  }
+  getArrayForType = function(type){
+    if (type == "heat"){
+      return heats;
+    }else if(type == "light"){
+      return lights;
+    }else if(type == "pressure"){
+      return pressures;
+    }
+    return heights;    	
+  }
+  getImage = function(data){
     var image = 'images/circle_blue.png';
     if (data.type == "heat"){
       image = 'images/circle_red.png';
@@ -40,25 +81,7 @@
     }else if(data.type == "pressure"){
       image = 'images/circle_orange.png';
     }
-    var latLng = new google.maps.LatLng(data.latitude,data.longitude);
-    var marker = new google.maps.Marker({
-      position: latLng, 
-      map: map,
-      title:data.message,
-      icon: image
-    });
-
-  }
-  loadData = function(map){
-    $.ajax({
-      accepts : "text/json",
-      dataType : "json",
-      url: "http://localhost:1337/",
-      success: function( data ) {
-	drawData(data.items, map);
-
-      }
-    });
+    return image;
   }
 
 </script>
