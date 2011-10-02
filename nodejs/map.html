@@ -27,10 +27,10 @@
     //loadData(map);
     $("div#checkboxes input:checkbox").click(function(){
 	var checkbox = $(this);	
-	if (.is(':checked')) {
-//	  checkbox.
+	if (checkbox.is(':checked')) {
+	    loadData(map, checkbox.attr("id"));
 	} else {
-	  $(getArrayForType(this)).each(function(){
+	  $(getArrayForType(checkbox.attr("id"))).each(function(){
 	     this.setMap(null);
 	  });
 	}
@@ -53,10 +53,11 @@
     getArrayForType(data.type).push(marker);
   }
   loadData = function(map, type){
+    var url = "http://localhost:1337?type=" + type;
     $.ajax({
       accepts : "text/json",
       dataType : "json",
-      url: "http://localhost:1337/",
+      url: url,
       success: function( data ) {
 	drawData(data.items, map);
       }
