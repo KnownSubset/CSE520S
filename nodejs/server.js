@@ -23,7 +23,6 @@ http.createServer(function (req, response) {
 		  client.end();
 		  return;
 	      }
-	      console.log(results.length);
 	      for (var i = 0; i < results.length; i++){
 	      	items.push({latitude:results[i]['lat'],
 			    longitude:results[i]['lon'], 
@@ -39,11 +38,7 @@ http.createServer(function (req, response) {
 	      response.write(body);
 	      response.end();
 	});
-	client.end();
+
     });
- 
-  
-  
-  console.log("log");
 }).listen(1337, "127.0.0.1");
 console.log('Server running at http://127.0.0.1:1337/');
