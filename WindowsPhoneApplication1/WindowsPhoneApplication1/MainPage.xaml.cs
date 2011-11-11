@@ -19,18 +19,19 @@ using System.IO.IsolatedStorage;
 using System.Windows;
 using Microsoft.Devices;
 using Microsoft.Phone.Controls;
+using Microsoft.Phone.Shell;
 using Microsoft.Xna.Framework.Media;
-
 
 #endregion
 
 namespace CSE520S.Rover {
     public partial class MainPage : PhoneApplicationPage {
-        private string accuracyText = "";
-        private GeoPosition<GeoCoordinate> currentCoordinate;
-        private PhotoCamera camera;
         private readonly MediaLibrary library = new MediaLibrary();
+        private string accuracyText = "";
+        private PhotoCamera camera;
+        private bool cameraInUse;
         private bool cameraInitialized;
+        private GeoPosition<GeoCoordinate> currentCoordinate;
 
         /// <summary>
         /// This sample receives data from the Location Service and displays the geographic coordinates of the device.
@@ -44,6 +45,8 @@ namespace CSE520S.Rover {
         /// </summary>
         public MainPage() {
             InitializeComponent();
+            PhoneApplicationService.Current.ApplicationIdleDetectionMode = IdleDetectionMode.Disabled;
+            PhoneApplicationService.Current.UserIdleDetectionMode = IdleDetectionMode.Disabled;
         }
 
         #endregion
@@ -75,12 +78,19 @@ namespace CSE520S.Rover {
         }
 
         private void StopButtonClick(object sender, EventArgs e) {
-            if (watcher != null) {
+            /*if (watcher != null) {
                 watcher.Stop();
             }
             StatusTextBlock.Text = "location service is off";
             LatitudeTextBlock.Text = " ";
-            LongitudeTextBlock.Text = " ";
+            LongitudeTextBlock.Text = " ";*/
+            var random = new Random();
+            double latitude = random.NextDouble()*90;
+            double longitude = random.NextDouble()*-180;
+            var geoCoordinate = new GeoCoordinate(latitude, longitude);
+            var geoPosition = new GeoPosition<GeoCoordinate>(new DateTimeOffset(),geoCoordinate );
+            var geoPositionChangedEventArgs = new GeoPositionChangedEventArgs<GeoCoordinate>(geoPosition);
+            MyPositionChanged(geoPositionChangedEventArgs);
         }
 
         #endregion
@@ -108,12 +118,14 @@ namespace CSE520S.Rover {
 
             // Event is fired when the capture sequence is complete and an image is available.
             camera.CaptureImageAvailable += cam_CaptureImageAvailable;
+            camera.CaptureImageAvailable += cam_CaptureImageCompleted;
 
             // Event is fired when the capture sequence is complete and a thumbnail image is available.
             camera.CaptureThumbnailAvailable += cam_CaptureThumbnailAvailable;
 
             // The event is fired when auto-focus is complete.
             camera.AutoFocusCompleted += cam_AutoFocusCompleted;
+
             cameraInitialized = false;
             viewFinderBrush.SetSource(camera);
         }
@@ -177,7 +189,18 @@ namespace CSE520S.Rover {
             LatitudeTextBlock.Text = e.Position.Location.Latitude.ToString("0.000000");
             LongitudeTextBlock.Text = e.Position.Location.Longitude.ToString("0.000000");
             if (cameraInitialized) {
-                camera.Focus();
+                lock (this) {
+                    if (!cameraInUse) {
+                        cameraInUse = true;
+                        try {
+                            camera.Focus();
+                            DebugTextBlock.Text = "focus";
+                        }
+                        catch (Exception exception) {
+                            DebugTextBlock.Text = exception.Message;
+                        }
+                    }
+                }
             }
         }
 
@@ -186,7 +209,20 @@ namespace CSE520S.Rover {
         private void cam_Initialized(object sender, CameraOperationCompletedEventArgs e) {
             if (e.Succeeded) {
                 cameraInitialized = true;
-                Dispatcher.BeginInvoke(() => camera.Focus());
+               /* Dispatcher.BeginInvoke(() => {
+                                           lock (this) {
+                                               if (!cameraInUse) {
+                                                   cameraInUse = true;
+                                                   try {
+                                                       camera.Focus();
+                                                       DebugTextBlock.Text = "focus";
+                                                   }
+                                                   catch (Exception exception) {
+                                                       DebugTextBlock.Text = exception.Message;
+                                                   }
+                                               }
+                                           }
+                                       });*/
             }
         }
 
@@ -194,12 +230,15 @@ namespace CSE520S.Rover {
         // Informs when thumbnail picture has been taken, saves to isolated storage
         // User will select this image in the pictures application to bring up the full-resolution picture. 
         public void cam_CaptureThumbnailAvailable(object sender, ContentReadyEventArgs e) {
-            string fileName = currentCoordinate.Location.Latitude.ToString("0.00000") + currentCoordinate.Location.Longitude.ToString("0.00000") + "_th.jpg";
+            string fileName = currentCoordinate.Location.Latitude.ToString("0.00000") +
+                              currentCoordinate.Location.Longitude.ToString("0.00000") + "_th.jpg";
 
             try {
                 // Save thumbnail as JPEG to isolated storage.
                 using (IsolatedStorageFile isStore = IsolatedStorageFile.GetUserStoreForApplication()) {
-                    using (IsolatedStorageFileStream targetStream = isStore.OpenFile(fileName, FileMode.Create, FileAccess.Write)) {
+                    using (
+                        IsolatedStorageFileStream targetStream = isStore.OpenFile(fileName, FileMode.Create,
+                                                                                  FileAccess.Write)) {
                         // Initialize the buffer for 4KB disk pages.
                         var readBuffer = new byte[4096];
                         int bytesRead;
@@ -210,7 +249,9 @@ namespace CSE520S.Rover {
                         }
                     }
                 }
-            } finally {
+            }catch (Exception exception){
+                DebugTextBlock.Text = exception.Message;
+            }finally {
                 // Close image stream
                 e.ImageStream.Close();
             }
@@ -219,7 +260,8 @@ namespace CSE520S.Rover {
 
         // Informs when full resolution picture has been taken, saves to local media library and isolated storage.
         private void cam_CaptureImageAvailable(object sender, ContentReadyEventArgs e) {
-            string fileName = currentCoordinate.Location.Latitude.ToString("0.00000") + currentCoordinate.Location.Longitude.ToString("0.00000") + ".jpg";
+            string fileName = currentCoordinate.Location.Latitude.ToString("0.00000") +
+                              currentCoordinate.Location.Longitude.ToString("0.00000") + ".jpg";
 
             try {
                 // Save picture to the library camera roll.
@@ -230,7 +272,9 @@ namespace CSE520S.Rover {
 
                 // Save picture as JPEG to isolated storage.
                 using (IsolatedStorageFile isStore = IsolatedStorageFile.GetUserStoreForApplication()) {
-                    using (IsolatedStorageFileStream targetStream = isStore.OpenFile(fileName, FileMode.Create, FileAccess.Write)) {
+                    using (
+                        IsolatedStorageFileStream targetStream = isStore.OpenFile(fileName, FileMode.Create,
+                                                                                  FileAccess.Write)) {
                         // Initialize the buffer for 4KB disk pages.
                         var readBuffer = new byte[4096];
                         int bytesRead;
@@ -241,14 +285,36 @@ namespace CSE520S.Rover {
                         }
                     }
                 }
-            } finally {
+            }catch (Exception exception){
+                DebugTextBlock.Text = exception.Message;
+            }finally {
                 // Close image stream
                 e.ImageStream.Close();
             }
         }
 
+        // Informs when full resolution picture has been taken, saves to local media library and isolated storage.
+        private void cam_CaptureImageCompleted(object sender, ContentReadyEventArgs e) {
+            Deployment.Current.Dispatcher.BeginInvoke(() => {
+                                                          lock (this) {
+                                                              DebugTextBlock.Text = "complete";
+                                                              cameraInUse = false;
+                                                          }
+                                                      });
+        }
+
         private void cam_AutoFocusCompleted(object sender, CameraOperationCompletedEventArgs e) {
-            Deployment.Current.Dispatcher.BeginInvoke(() => camera.CaptureImage());
+            Deployment.Current.Dispatcher.BeginInvoke(() => {
+                                                          lock (this) {
+                                                              try {
+                                                                  camera.CaptureImage();
+                                                                  DebugTextBlock.Text = "capture";
+                                                              }
+                                                              catch (Exception exception) {
+                                                                  DebugTextBlock.Text = exception.Message;
+                                                              }
+                                                          }
+                                                      });
         }
 
         #endregion

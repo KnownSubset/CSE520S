@@ -46,7 +46,7 @@
                     </VideoBrush.RelativeTransform>
                 </VideoBrush>
             </Canvas.Background>
-            <Grid x:Name="ContentPanel" Canvas.Left="24" Canvas.Top="350">
+            <Grid x:Name="ContentPanel" Canvas.Left="24" Canvas.Top="315">
                 <StackPanel Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock HorizontalAlignment="Left" Name="StatusLabel" Text="status" Width="134" Style="{StaticResource PhoneTextLargeStyle}" />
@@ -59,6 +59,10 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock HorizontalAlignment="Left" Name="LongLabel" Text="longitude" Width="134" Style="{StaticResource PhoneTextLargeStyle}" />
                         <TextBlock HorizontalAlignment="Left" Name="LongitudeTextBlock" Text=" " Width="425" Style="{StaticResource PhoneTextLargeStyle}" Foreground="{StaticResource PhoneAccentBrush}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock HorizontalAlignment="Left" Name="DebugLabel" Text="error" Width="134" Style="{StaticResource PhoneTextLargeStyle}" />
+                        <TextBlock HorizontalAlignment="Left" Name="DebugTextBlock" Text=" " Width="425" Style="{StaticResource PhoneTextLargeStyle}" Foreground="{StaticResource PhoneAccentBrush}" />
                     </StackPanel>
                 </StackPanel>
             </Grid>
