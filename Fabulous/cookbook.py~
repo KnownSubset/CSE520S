@@ -1,0 +1,38 @@
+# cookbook.py
+# This file describes the packages to install and how to set them up.
+# 
+# Ingredients: nginx, memecached, gunicorn, supervisord, virtualenv, git
+
+recipe = [
+  # First command as regular user
+  {"action":"run", "params":"whoami"},
+
+  # sudo apt-get update
+  {"action":"sudo", "params":"apt-get update -qq",
+    "message":"Updating apt-get"},
+  
+  # List of APT packages to install
+  {"action":"apt",
+    "params":["mysql-client", "libmysqlclient-dev", "nodejs", "npm", "git"],
+    "message":"Installing apt-get packages"},
+  
+  # List of pypi packages to install
+  {"action":"npm", "params":["mysql"], "message":"Installing pip packages"},
+
+  
+  # webapps alias
+  {"action":"run", "params":"""echo "alias webapps='cd %(APPS_DIR)s'" >> /home/%(SERVER_USERNAME)s/.profile"""},
+  
+  # webapps dir
+  {"action":"sudo", "params":"mkdir %(APPS_DIR)s", "message":"Creating webapps directory"},
+  {"action":"sudo", "params":"chown -R %(SERVER_USERNAME)s: %(APPS_DIR)s"},
+  
+  # git setup
+  {"action":"run", "params":"git config --global user.name '%(GIT_USERNAME)s'",    "message":"Configuring git"},
+  {"action":"run", "params":"git config --global user.email '%(ADMIN_EMAIL)s'"},
+  {"action":"put", "params":{"file":"%(GITHUB_DEPLOY_KEY_PATH)s", "destination":"/home/%(SERVER_USERNAME)s/.ssh/%(GITHUB_DEPLOY_KEY_NAME)s"}},
+  {"action":"run", "params":"chmod 600 /home/%(SERVER_USERNAME)s/.ssh/%(GITHUB_DEPLOY_KEY_NAME)s"},
+  {"action":"run", "params":"""echo 'IdentityFile /home/%(SERVER_USERNAME)s/.ssh/%(GITHUB_DEPLOY_KEY_NAME)s' >> /home/%(SERVER_USERNAME)s/.ssh/config"""},
+  {"action":"run", "params":"ssh-keyscan github.com >> /home/%(SERVER_USERNAME)s/.ssh/known_hosts"},
+  
+]
