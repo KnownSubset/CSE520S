@@ -26,16 +26,30 @@
     var $map = $("div#map_canvas");
     var map = new google.maps.Map($map[0], myOptions);
     $("div#checkboxes input:checkbox").click(function(){
-	var checkbox = $(this);	
-	if (checkbox.is(':checked')) {
-	    loadData(map, checkbox.attr("id"));
-	} else {
-	  $(getArrayForType(checkbox.attr("id"))).each(function(){
-	     this.setMap(null);
-	  });
-	  var intervalId = getIntervalIdForType(checkbox.attr("id"));
-	  clearTimeout(timeoutIds[intervalId]);
-	}
+		var checkbox = $(this);	
+		if (checkbox.is(':checked')) {
+			loadData(map, checkbox.attr("id"));
+		} else {
+		  $(getArrayForType(checkbox.attr("id"))).each(function(){
+			 this.setMap(null);
+		  });
+		  var intervalId = getIntervalIdForType(checkbox.attr("id"));
+		  clearTimeout(timeoutIds[intervalId]);
+		}
+    });
+	$("div#checkboxes input:submit").click(function(){
+		var longitude = $("div#checkboxes input#lon").text;
+		var latitude = $("div#checkboxes input#lat").text;
+		var url = "http://ec2-107-20-224-204.compute-1.amazonaws.com/node/";
+		var data  = {};
+		data[latitude] = latitude;
+		data[longitude] = longitude;
+		$.ajax({
+			type: 'POST',
+            url: url,
+            data: data,
+            dataType: 'json'
+			});
     });
   });
   drawData = function (data, map) {
@@ -61,14 +75,14 @@
       dataType : "json",
       url: url,
       success: function( data ) {
-	drawData(data.items, map);
-	var id = getIntervalIdForType(type);
-	timeoutIds[id] = setTimeout(function(){
-	    $(getArrayForType(type)).each(function(){
-	       this.setMap(null);
-	     });
-	    loadData(map, type);
-	  },5000);
+		drawData(data.items, map);
+		var id = getIntervalIdForType(type);
+		timeoutIds[id] = setTimeout(function(){
+			$(getArrayForType(type)).each(function(){
+			   this.setMap(null);
+			 });
+			loadData(map, type);
+		  },5000);
       }
     });
   }
@@ -112,6 +126,10 @@
     <label for="heat">Heat</label><input id="heat" type="checkbox"></input>
     <label for="light">Light</label><input id="light" type="checkbox"></input>
     <label for="pressure">Pressure</label><input id="pressure" type="checkbox"></input>
+	
+	<label for="lon">Longitude</label><input id="lon" type="text"></input>
+	<label for="lon">Latitude</label><input id="lat" type="text"></input>
+	<label for="submit">Submit</label><input id="submit" type="submit"></input>
   </div>
   <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>
