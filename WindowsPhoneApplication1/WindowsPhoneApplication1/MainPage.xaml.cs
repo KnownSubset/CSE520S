@@ -16,11 +16,14 @@ using System;
 using System.Device.Location;
 using System.IO;
 using System.IO.IsolatedStorage;
+using System.Net;
 using System.Windows;
 using Microsoft.Devices;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
 using Microsoft.Xna.Framework.Media;
+using RestSharp;
+using WindowsPhoneApplication1;
 
 #endregion
 
@@ -209,20 +212,6 @@ namespace CSE520S.Rover {
         private void cam_Initialized(object sender, CameraOperationCompletedEventArgs e) {
             if (e.Succeeded) {
                 cameraInitialized = true;
-               /* Dispatcher.BeginInvoke(() => {
-                                           lock (this) {
-                                               if (!cameraInUse) {
-                                                   cameraInUse = true;
-                                                   try {
-                                                       camera.Focus();
-                                                       DebugTextBlock.Text = "focus";
-                                                   }
-                                                   catch (Exception exception) {
-                                                       DebugTextBlock.Text = exception.Message;
-                                                   }
-                                               }
-                                           }
-                                       });*/
             }
         }
 
@@ -230,15 +219,14 @@ namespace CSE520S.Rover {
         // Informs when thumbnail picture has been taken, saves to isolated storage
         // User will select this image in the pictures application to bring up the full-resolution picture. 
         public void cam_CaptureThumbnailAvailable(object sender, ContentReadyEventArgs e) {
-            string fileName = currentCoordinate.Location.Latitude.ToString("0.00000") +
-                              currentCoordinate.Location.Longitude.ToString("0.00000") + "_th.jpg";
+            var latitude = currentCoordinate.Location.Latitude.ToString("0.00000");
+            var longitude = currentCoordinate.Location.Longitude.ToString("0.00000");
+            string fileName = latitude + longitude + "_th.jpg";
 
             try {
                 // Save thumbnail as JPEG to isolated storage.
                 using (IsolatedStorageFile isStore = IsolatedStorageFile.GetUserStoreForApplication()) {
-                    using (
-                        IsolatedStorageFileStream targetStream = isStore.OpenFile(fileName, FileMode.Create,
-                                                                                  FileAccess.Write)) {
+                    using (IsolatedStorageFileStream targetStream = isStore.OpenFile(fileName, FileMode.Create,FileAccess.Write)) {
                         // Initialize the buffer for 4KB disk pages.
                         var readBuffer = new byte[4096];
                         int bytesRead;
@@ -247,6 +235,19 @@ namespace CSE520S.Rover {
                         while ((bytesRead = e.ImageStream.Read(readBuffer, 0, readBuffer.Length)) > 0) {
                             targetStream.Write(readBuffer, 0, bytesRead);
                         }
+                        var restClient = new RestClient {BaseUrl = "http://twitter.com"};
+                        var restRequest = new RestRequest(Method.POST)
+                            .AddFile(fileName, readBuffer, fileName)
+                            .AddParameter("latitude", latitude)
+                            .AddParameter("longitude", longitude);
+                        //restRequest.Resource = "blah";
+                        var callback = new Action<RestResponse>(delegate {}); 
+                        restClient.ExecuteAsync(restRequest, callback);
+                        Deployment.Current.Dispatcher.BeginInvoke(() => {
+                                                                      lock (this) {
+                                                                          DebugTextBlock.Text = "posted";
+                                                                      }
+                                                                  });
                     }
                 }
             }catch (Exception exception){
