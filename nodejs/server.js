@@ -4,7 +4,7 @@ var sys = require('sys');
 var mysql = require('mysql');
 var client = mysql.createClient({
   user: 'root',
-  password: ''
+  password: 'mysql'
 });
 
 http.createServer(function (request, response) {
@@ -13,28 +13,33 @@ http.createServer(function (request, response) {
         retrieveData(request, response);
     } else if (request.method == 'POST'){
         console.log('POST');
-        postData(request);
+        postData(request, response);
     }
 }).listen(1337, "127.0.0.1");
 
 var postData = function (request){
-    var body = '';
-    request.on('data', function (data) {
-        body += data;
-    });
-    var elements = {};
-    request.on('end', function () {
-        elements = JSON.parse(body);
-    });
-    client.query('USE cse520S', function(error, results) {
-        if(error) {
-            console.log('ClientConnectionReady Error: ' + error.message);
-            client.end();
-            return;
-        }
-        client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , [elements.type, elements.value, elements.lat, elements.lon]);
 
-    });
+	    var body = [];
+	    request.on("data", function (data) {
+		body.push(data);
+	    });
+	    request.on('end', function () {
+	 	var elements = {};
+		console.log(body);
+		console.log(body.join(''));
+		elements = JSON.parse(body.join(''));
+		client.query('USE cse520S', function(error, results) {
+			if(error) {
+			    console.log('ClientConnectionReady Error: ' + error.message);
+			    client.end();
+			    return;
+			}
+			client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , [elements.type, elements.value, elements.lat, elements.lon]);
+
+		    });
+	    });
+	
+    
 }
 
 var retrieveData = function (request, response){
