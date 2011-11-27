@@ -6,7 +6,7 @@ var fs = require('fs');
 var qs = require('qs');
 var client = mysql.createClient({
   user: 'root',
-  password: 'mysql'
+  password: ''
 });
 
 http.createServer(function (request, response) {
@@ -37,6 +37,14 @@ var postData = function (request){
 			console.log(json);
 			elements = qs.parse(json);
 			console.log(elements);
+			var fileName = '~/CSE520S/nodejs/images/gps' + elements.lat + elements.lon + '.png'; 
+			fs.writeFile(fileName, elements.file, function(err) {
+				if(err) {
+					console.log(err);
+				} else {
+					console.log("The file was saved!");
+				}
+			}); 
 			//elements = JSON.parse(json);
 			client.query('USE cse520S', function(error, results) {
 				if(error) {
