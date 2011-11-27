@@ -1,27 +1,27 @@
 var http = require('http');
 var url = require('url');
-var sys = require('sys');
+var express = require('../../lib/express')
+  , form = require('connect-form');
 var mysql = require('mysql');
-var form = require('connect-form');
 var client = mysql.createClient({
   user: 'root',
   password: ''
 });
 
-http.createServer(function (request, response) {
-    if (request.method == 'GET') {
+var app = express.createServer(
+  // connect-form (http://github.com/visionmedia/connect-form)
+  // middleware uses the formidable middleware to parse urlencoded
+  // and multipart form data
+  form({ keepExtensions: true })
+);
+app.get('/', function(request, response){
         console.log('GET');
         retrieveData(request, response);
-    } else if (request.method == 'POST'){
-        console.log('POST');
-        postData(request, response);
-	response.end();
-    }
-}).listen(1337, "127.0.0.1");
-
-var writeFile = function (){
-	var outstream = fs.createWriteStream('filename');
-}
+	});
+	
+app.post('/', function(request, response, next){
+	postData(request);
+	});
 
 var postData = function (request){
 
@@ -83,4 +83,5 @@ var retrieveData = function (request, response){
 
     });
 }
-console.log('Server running at http://127.0.0.1:1337/');
+app.listen(1337);
+console.log('Express app started on http://127.0.0.1:1337/');
