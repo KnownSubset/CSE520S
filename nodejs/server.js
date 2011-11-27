@@ -2,6 +2,7 @@ var http = require('http');
 var url = require('url');
 var sys = require('sys');
 var mysql = require('mysql');
+var fs = require('fs');
 var client = mysql.createClient({
   user: 'root',
   password: 'mysql'
@@ -14,8 +15,13 @@ http.createServer(function (request, response) {
     } else if (request.method == 'POST'){
         console.log('POST');
         postData(request, response);
+	response.end();
     }
 }).listen(1337, "127.0.0.1");
+
+var writeFile = function (){
+	var outstream = fs.createWriteStream('filename');
+}
 
 var postData = function (request){
 
@@ -26,8 +32,9 @@ var postData = function (request){
 	    request.on('end', function () {
 	 	var elements = {};
 		console.log(body);
-		console.log(body.join(''));
-		elements = JSON.parse(body.join(''));
+		var json = body.join('');
+		console.log(json);
+		elements = JSON.parse(json);
 		client.query('USE cse520S', function(error, results) {
 			if(error) {
 			    console.log('ClientConnectionReady Error: ' + error.message);
