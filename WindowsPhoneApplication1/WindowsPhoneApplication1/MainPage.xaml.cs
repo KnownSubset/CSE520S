@@ -238,7 +238,7 @@ namespace CSE520S.Rover {
                         var restClient = new RestClient { BaseUrl = "http://ec2-107-20-224-204.compute-1.amazonaws.com/node" };
 
                         var restRequest = new RestRequest(Method.POST)
-                            //.AddFile("file", readBuffer, fileName)
+                            .AddFile("file", readBuffer, fileName)
                             .AddParameter("type", "light")
                             .AddParameter("value", 1.0)
                             .AddParameter("lat", latitude)

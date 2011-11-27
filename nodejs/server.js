@@ -1,4 +1,4 @@
-var http = require('http');
+var fs = require('fs');
 var url = require('url');
 var express = require('express')
   , form = require('connect-form');
@@ -24,17 +24,31 @@ app.post('/', function(request, response, next){
 	});
 
 var postData = function (request,next){
-	var elements = {};
 	request.form.complete(function(err, fields, files){
 		if (err) {
 			next(err);
 		} else {
-			elements = fields;
+			updateDatabase(elements);
+			moveFiles(files.file);
 		}
 		console.log(fields);
 		console.log(files);
 	});
 	//elements = JSON.parse(json);
+	
+}
+
+var moveFile = function (file){
+	fs.rename(file.path, '~/CSE520S/nodejs/images/'+file.name, function (err) {
+		if (err) throw err;
+		fs.stat('/tmp/world', function (err, stats) {
+			if (err) throw err;
+			console.log('stats: ' + JSON.stringify(stats));
+		});
+	});
+}
+
+var updateDatabase = function (elements){
 	client.query('USE cse520S', function(error, results) {
 		if(error) {
 			console.log('ClientConnectionReady Error: ' + error.message);
@@ -42,7 +56,6 @@ var postData = function (request,next){
 			return;
 		}
 		client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , [elements.type, elements.value, elements.lat, elements.lon]);
-
 	});    
 }
 
