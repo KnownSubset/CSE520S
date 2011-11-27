@@ -1,4 +1,4 @@
-drop database cse520S;
+drop database if exists cse520S;
 create database cse520S;
 use cse520S;
 

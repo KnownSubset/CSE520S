@@ -5,7 +5,7 @@ var Client = require('mysql').Client;
 var client = new Client();
  
 client.user = 'root';
-client.password = 'mysql';
+client.password = '';
 
 http.createServer(function (req, response) {
   var items = new Array();

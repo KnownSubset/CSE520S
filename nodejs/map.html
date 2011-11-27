@@ -55,7 +55,7 @@
     getArrayForType(data.type).push(marker);
   }
   loadData = function(map, type){
-    var url = "http://localhost:1337?type=" + type;
+    var url = "http://ec2-107-20-224-204.compute-1.amazonaws.com/node/?type=" + type;    
     $.ajax({
       accepts : "text/json",
       dataType : "json",
