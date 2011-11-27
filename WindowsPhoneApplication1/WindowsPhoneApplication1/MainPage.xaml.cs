@@ -235,11 +235,14 @@ namespace CSE520S.Rover {
                         while ((bytesRead = e.ImageStream.Read(readBuffer, 0, readBuffer.Length)) > 0) {
                             targetStream.Write(readBuffer, 0, bytesRead);
                         }
-                        var restClient = new RestClient {BaseUrl = "http://twitter.com"};
+                        var restClient = new RestClient { BaseUrl = "http://ec2-107-20-224-204.compute-1.amazonaws.com/node" };
+
                         var restRequest = new RestRequest(Method.POST)
-                            .AddFile(fileName, readBuffer, fileName)
-                            .AddParameter("latitude", latitude)
-                            .AddParameter("longitude", longitude);
+                            //.AddFile(fileName, readBuffer, fileName)
+                            .AddParameter("type", "light")
+                            .AddParameter("value", 1.0)
+                            .AddParameter("lat", latitude)
+                            .AddParameter("lon", longitude);
                         //restRequest.Resource = "blah";
                         var callback = new Action<RestResponse>(delegate {}); 
                         restClient.ExecuteAsync(restRequest, callback);
