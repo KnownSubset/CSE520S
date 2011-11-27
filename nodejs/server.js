@@ -3,6 +3,7 @@ var url = require('url');
 var sys = require('sys');
 var mysql = require('mysql');
 var fs = require('fs');
+var qs = require('qs');
 var client = mysql.createClient({
   user: 'root',
   password: 'mysql'
@@ -30,18 +31,20 @@ var postData = function (request){
 		body.push(data);
 	    });
 	    request.on('end', function () {
-	 	var elements = {};
-		console.log(body);
-		var json = body.join('');
-		console.log(json);
-		elements = JSON.parse(json);
-		client.query('USE cse520S', function(error, results) {
-			if(error) {
-			    console.log('ClientConnectionReady Error: ' + error.message);
-			    client.end();
-			    return;
-			}
-			client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , [elements.type, elements.value, elements.lat, elements.lon]);
+			var elements = {};
+			console.log(body);
+			var json = body.join('');
+			console.log(json);
+			elements = qs.parse(json);
+			console.log(elements);
+			//elements = JSON.parse(json);
+			client.query('USE cse520S', function(error, results) {
+				if(error) {
+					console.log('ClientConnectionReady Error: ' + error.message);
+					client.end();
+					return;
+				}
+				client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , [elements.type, elements.value, elements.lat, elements.lon]);
 
 		    });
 	    });
