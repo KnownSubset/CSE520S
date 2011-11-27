@@ -1,6 +1,6 @@
 var http = require('http');
 var url = require('url');
-var express = require('../../lib/express')
+var express = require('express')
   , form = require('connect-form');
 var mysql = require('mysql');
 var client = mysql.createClient({
@@ -20,19 +20,16 @@ app.get('/', function(request, response){
 	});
 	
 app.post('/', function(request, response, next){
-	postData(request);
+	postData(request,next);
 	});
 
-var postData = function (request){
-
-	req.form.complete(function(err, fields, files){
+var postData = function (request,next){
+	var elements = {};
+	request.form.complete(function(err, fields, files){
 		if (err) {
 			next(err);
 		} else {
-			console.log('\nuploaded %s to %s'
-			,  files.image.filename
-			, files.image.path);
-			res.redirect('back');
+			elements = fields;
 		}
 		console.log(fields);
 		console.log(files);
