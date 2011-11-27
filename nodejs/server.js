@@ -2,8 +2,7 @@ var http = require('http');
 var url = require('url');
 var sys = require('sys');
 var mysql = require('mysql');
-var fs = require('fs');
-var qs = require('qs');
+var form = require('connect-form');
 var client = mysql.createClient({
   user: 'root',
   password: ''
@@ -26,38 +25,28 @@ var writeFile = function (){
 
 var postData = function (request){
 
-	    var body = [];
-	    request.on("data", function (data) {
-		body.push(data);
-	    });
-	    request.on('end', function () {
-			var elements = {};
-			console.log(body);
-			var json = body.join('');
-			console.log(json);
-			elements = qs.parse(json);
-			console.log(elements);
-			var fileName = '~/CSE520S/nodejs/images/gps' + elements.lat + elements.lon + '.png'; 
-			fs.writeFile(fileName, elements.file, function(err) {
-				if(err) {
-					console.log(err);
-				} else {
-					console.log("The file was saved!");
-				}
-			}); 
-			//elements = JSON.parse(json);
-			client.query('USE cse520S', function(error, results) {
-				if(error) {
-					console.log('ClientConnectionReady Error: ' + error.message);
-					client.end();
-					return;
-				}
-				client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , [elements.type, elements.value, elements.lat, elements.lon]);
+	req.form.complete(function(err, fields, files){
+		if (err) {
+			next(err);
+		} else {
+			console.log('\nuploaded %s to %s'
+			,  files.image.filename
+			, files.image.path);
+			res.redirect('back');
+		}
+		console.log(fields);
+		console.log(files);
+	});
+	//elements = JSON.parse(json);
+	client.query('USE cse520S', function(error, results) {
+		if(error) {
+			console.log('ClientConnectionReady Error: ' + error.message);
+			client.end();
+			return;
+		}
+		client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , [elements.type, elements.value, elements.lat, elements.lon]);
 
-		    });
-	    });
-	
-    
+	});    
 }
 
 var retrieveData = function (request, response){
