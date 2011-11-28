@@ -37,15 +37,6 @@
 		  clearTimeout(timeoutIds[intervalId]);
 		}
     });
-	$("div#checkboxes input:submit").click(function(event){
-		event.preventDefault();
-		var longitude = $("div#checkboxes input#lon").val();
-		var latitude = $("div#checkboxes input#lat").val();
-		var url = "http://localhost:1337/";
-		var data  = {"lon":longitude, "lat":latitude};		
-		$.ajax({type:'POST',url:url,data:data});
-    });
-
   });
   drawData = function (data, map) {
     $(data).each(function($this){
@@ -120,11 +111,7 @@
     <label for="height">Height</label><input id="height" type="checkbox"></input>
     <label for="heat">Heat</label><input id="heat" type="checkbox"></input>
     <label for="light">Light</label><input id="light" type="checkbox"></input>
-    <label for="pressure">Pressure</label><input id="pressure" type="checkbox"></input>
-	
-    <label for="lon">Longitude</label><input id="lon" type="text"></input>
-    <label for="lon">Latitude</label><input id="lat" type="text"></input>
-    <label for="submit">Submit</label><input id="submit" type="submit"></input>
+    <label for="pressure">Pressure</label><input id="pressure" type="checkbox"></input>	
   </div>
   <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>

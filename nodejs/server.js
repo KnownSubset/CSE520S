@@ -9,9 +9,6 @@ var client = mysql.createClient({
 });
 
 var app = express.createServer(
-  // connect-form (http://github.com/visionmedia/connect-form)
-  // middleware uses the formidable middleware to parse urlencoded
-  // and multipart form data
   form({ keepExtensions: true })
 );
 app.get('/', function(request, response){
@@ -40,15 +37,6 @@ var postData = function (request,next){
 }
 
 var moveFile = function (file){
-/*	var inp = fs.createReadStream(file.path);
-	inp.setEncoding('binary');
-	var inptext = new Array();  
-	inp.on('data', function (data) {
-		inptext.push(data);
-	});
-	inp.on('end', function (close) {
-		fs.writeFileSync("/home/ec2-user/CSE520S/nodejs/images/"+file.name,inptext.join('') );
-	});*/
 	fs.rename(file.path, "/home/ec2-user/CSE520S/nodejs/images/"+file.name,function(err){
 		console.log(err);
 	});
