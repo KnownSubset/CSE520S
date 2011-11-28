@@ -13,6 +13,7 @@
 #region imports
 
 using System;
+using System.Collections.Generic;
 using System.Device.Location;
 using System.IO;
 using System.IO.IsolatedStorage;
@@ -225,7 +226,9 @@ namespace CSE520S.Rover {
 
             try {
                 // Save thumbnail as JPEG to isolated storage.
-                using (IsolatedStorageFile isStore = IsolatedStorageFile.GetUserStoreForApplication()) {
+                var bytes = new List<byte>();
+                using (IsolatedStorageFile isStore = IsolatedStorageFile.GetUserStoreForApplication())
+                {
                     using (IsolatedStorageFileStream targetStream = isStore.OpenFile(fileName, FileMode.Create,FileAccess.Write)) {
                         // Initialize the buffer for 4KB disk pages.
                         var readBuffer = new byte[4096];
@@ -234,24 +237,11 @@ namespace CSE520S.Rover {
                         // Copy the thumbnail to isolated storage. 
                         while ((bytesRead = e.ImageStream.Read(readBuffer, 0, readBuffer.Length)) > 0) {
                             targetStream.Write(readBuffer, 0, bytesRead);
+                            bytes.AddRange(readBuffer);
                         }
-                        var restClient = new RestClient { BaseUrl = "http://ec2-107-20-224-204.compute-1.amazonaws.com/node" };
-
-                        var restRequest = new RestRequest(Method.POST)
-                            .AddFile("file", readBuffer, fileName)
-                            .AddParameter("type", "light")
-                            .AddParameter("value", 1.0)
-                            .AddParameter("lat", latitude)
-                            .AddParameter("lon", longitude);
-                        //restRequest.Resource = "blah";
-                        var callback = new Action<RestResponse>(delegate {}); 
-                        restClient.ExecuteAsync(restRequest, callback);
-                        Deployment.Current.Dispatcher.BeginInvoke(() => {
-                                                                      lock (this) {
-                                                                          DebugTextBlock.Text = "posted";
-                                                                      }
-                                                                  });
+                        bytes.RemoveRange((int)targetStream.Length, (int)(bytes.Count - targetStream.Length));
                     }
+                    UploadImage(latitude, longitude, fileName, bytes.ToArray());
                 }
             }catch (Exception exception){
                 DebugTextBlock.Text = exception.Message;
@@ -261,11 +251,29 @@ namespace CSE520S.Rover {
             }
         }
 
+        private void UploadImage(string latitude, string longitude, string fileName, byte[] readBuffer) {
+            var restClient = new RestClient {BaseUrl = "http://ec2-107-20-224-204.compute-1.amazonaws.com/node"};
+            var restRequest =new RestRequest(Method.POST)
+                                .AddFile("file", readBuffer, fileName)
+                                .AddParameter("type", "light")
+                                .AddParameter("value", 1.0)
+                                .AddParameter("lat", latitude)
+                                .AddParameter("lon", longitude);
+            var callback = new Action<RestResponse>(delegate { });
+            restClient.ExecuteAsync(restRequest, callback);
+            Deployment.Current.Dispatcher.BeginInvoke(() => {
+                                                          lock (this) {
+                                                              DebugTextBlock.Text = "posted";
+                                                          }
+                                                      });
+        }
+
 
         // Informs when full resolution picture has been taken, saves to local media library and isolated storage.
         private void cam_CaptureImageAvailable(object sender, ContentReadyEventArgs e) {
-            string fileName = currentCoordinate.Location.Latitude.ToString("0.00000") +
-                              currentCoordinate.Location.Longitude.ToString("0.00000") + ".jpg";
+            var latitude = currentCoordinate.Location.Latitude.ToString("0.00000");
+            var longitude = currentCoordinate.Location.Longitude.ToString("0.00000");
+            string fileName = latitude + longitude + ".jpg";
 
             try {
                 // Save picture to the library camera roll.
@@ -275,19 +283,20 @@ namespace CSE520S.Rover {
                 e.ImageStream.Seek(0, SeekOrigin.Begin);
 
                 // Save picture as JPEG to isolated storage.
+                var bytes = new List<byte>();
                 using (IsolatedStorageFile isStore = IsolatedStorageFile.GetUserStoreForApplication()) {
-                    using (
-                        IsolatedStorageFileStream targetStream = isStore.OpenFile(fileName, FileMode.Create,
-                                                                                  FileAccess.Write)) {
+                    using (IsolatedStorageFileStream targetStream = isStore.OpenFile(fileName, FileMode.Create, FileAccess.Write)) {
                         // Initialize the buffer for 4KB disk pages.
-                        var readBuffer = new byte[4096];
-                        int bytesRead;
+                            var readBuffer = new byte[4096];
+                            int bytesRead;
 
-                        // Copy the image to isolated storage. 
-                        while ((bytesRead = e.ImageStream.Read(readBuffer, 0, readBuffer.Length)) > 0) {
-                            targetStream.Write(readBuffer, 0, bytesRead);
+                            // Copy the image to isolated storage. 
+                            while ((bytesRead = e.ImageStream.Read(readBuffer, 0, readBuffer.Length)) > 0) {
+                                targetStream.Write(readBuffer, 0, bytesRead);
+                                bytes.AddRange(readBuffer);
+                            }
+                            bytes.RemoveRange((int)targetStream.Length, (int) (bytes.Count - targetStream.Length));
                         }
-                    }
                 }
             }catch (Exception exception){
                 DebugTextBlock.Text = exception.Message;
