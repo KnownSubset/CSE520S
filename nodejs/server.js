@@ -20,31 +20,37 @@ app.get('/', function(request, response){
 	});
 	
 app.post('/', function(request, response, next){
+	response.end();
 	postData(request,next);
 	});
 
 var postData = function (request,next){
+	var file = null;
 	request.form.complete(function(err, fields, files){
 		if (err) {
 			next(err);
 		} else {
-			updateDatabase(elements);
-			moveFiles(files.file);
+			updateDatabase(fields);
+			file = files.file;
 		}
 		console.log(fields);
-		console.log(files);
+		console.log(file);
+		moveFile(file);
 	});
-	//elements = JSON.parse(json);
-	
 }
 
 var moveFile = function (file){
-	fs.rename(file.path, '~/CSE520S/nodejs/images/'+file.name, function (err) {
-		if (err) throw err;
-		fs.stat('/tmp/world', function (err, stats) {
-			if (err) throw err;
-			console.log('stats: ' + JSON.stringify(stats));
-		});
+/*	var inp = fs.createReadStream(file.path);
+	inp.setEncoding('binary');
+	var inptext = new Array();  
+	inp.on('data', function (data) {
+		inptext.push(data);
+	});
+	inp.on('end', function (close) {
+		fs.writeFileSync("/home/ec2-user/CSE520S/nodejs/images/"+file.name,inptext.join('') );
+	});*/
+	fs.rename(file.path, "/home/ec2-user/CSE520S/nodejs/images/"+file.name,function(err){
+		console.log(err);
 	});
 }
 
