@@ -12,7 +12,7 @@ fabconf['SERVER_USERNAME'] = "ubuntu"
 fabconf['SSH_PATH'] = "/path/to/.ssh"
 
 # Name of the private key file you use to connect to EC2 instances
-fabconf['EC2_KEY_NAME'] = "key.pem"
+fabconf['EC2_KEY_NAME'] = "wustlrover.pem"
 
 # Don't edit. Full path of the ssh key you use to connect to EC2 instances
 fabconf['SSH_PRIVATE_KEY_PATH'] = '%s/%s' % (fabconf['SSH_PATH'], fabconf['EC2_KEY_NAME'])
@@ -36,7 +36,7 @@ fabconf['VIRTUALENV_DIR'] = "/home/%s/.virtualenvs" % fabconf['SERVER_USERNAME']
 fabconf['ADMIN_EMAIL'] = "webmaster@localhost"
 
 # Git username for the server
-fabconf['GIT_USERNAME'] = "Server"
+fabconf['GIT_USERNAME'] = "KnownSubsetBot"
 
 # Name of the private key file used for github deployments
 fabconf['GITHUB_DEPLOY_KEY_NAME'] = "github"
@@ -63,10 +63,10 @@ ec2_secret = ''
 ec2_amis = ['ami-1335f37a']
 
 # Name of the keypair you use in EC2. http://24v.co/ldw0HZ 
-ec2_keypair = ''
+ec2_keypair = 'rover'
 
 # Name of the security group. http://24v.co/kl0Jyn 
-ec2_secgroups = ['']
+ec2_secgroups = ['default']
 
 # API Name of instance type. http://24v.co/mkWvpn
 ec2_instancetype = 't1.micro'
