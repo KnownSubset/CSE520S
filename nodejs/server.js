@@ -49,7 +49,19 @@ var updateDatabase = function (elements){
 			client.end();
 			return;
 		}
-		client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , [elements.type, elements.value, elements.lat, elements.lon]);
+		$.ajax({
+                url: "http://api.wunderground.com/api/8f09d4b925278b46/geolookup/conditions/forecast/q/"+elements.lat+","+elements.lon+".json",
+                dataType: "jsonp",
+                success: function(parsed_json) {
+                        var temp_f = parsed_json['current_observation']['temp_f'];
+                        var hum = parsed_json['current_observation']['relative_humidity'];
+                        var pres = parsed_json['current_observation']['pressure_in'];
+			client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , ["heat", temp_f, elements.lat, elements.lon]);
+			client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , ["humid", hum, elements.lat, elements.lon]);
+			client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , ["pressure", pres, elements.lat, elements.lon]);
+		}
+		});
+		client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , [elements.type, elements.value, elements.lat, elements.lon]);	
 	});    
 }
 
