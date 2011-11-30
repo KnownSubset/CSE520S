@@ -54,12 +54,14 @@
       title:data.message,
       icon: image
     });
-      	var con = "";
-	if (data.type != "light") {
-	    con = data.type + ': ' + data.value + "<br>Time: "+data.time
-	} else {
-	    con = "<img src=\"images/"+data.value+".jpg\" /><br>Time: "+data.time
-	}
+      	var con = "<img src=\"images/"+data.latitude+data.longitude+"_th.jpg\" />" + 
+				  "<br>Time: "+data.time+
+				  "<br>Conditions: "+data.condition+
+				  "<br>Temperature: "+data.temperature+
+				  "<br>Humidity: "+data.humidity+
+				  "<br>Pressure: "+data.pressure+
+				  "<br>Light: "+data.light;
+	
 	marker.infowindow = new google.maps.InfoWindow({
 	      content: con
 	});
@@ -77,12 +79,12 @@
       success: function( data ) {
 	drawData(data.items, map);
 	var id = getIntervalIdForType(type);
-	timeoutIds[id] = setTimeout(function(){
+	/*timeoutIds[id] = setTimeout(function(){
 	    $(getArrayForType(type)).each(function(){
 	       this.setMap(null);
 	     });
 	    loadData(map, type);
-	  },10000);
+	  },10000);*/
       }
     });
   }
@@ -107,7 +109,7 @@
     return 3;
   }
   getImage = function(data){
-    var image = 'images/circle_blue.png';
+    return 'images/circle_blue.png';
     if (data.type == "heat"){
       image = 'images/circle_red.png';
     }else if(data.type == "humid"){

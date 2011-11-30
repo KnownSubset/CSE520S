@@ -17,13 +17,19 @@ using System.Collections.Generic;
 using System.Device.Location;
 using System.IO;
 using System.IO.IsolatedStorage;
+using System.Linq;
 using System.Net;
+using System.Text;
+using System.Threading;
 using System.Windows;
+using System.Xml;
+using System.Xml.Linq;
 using Microsoft.Devices;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
 using Microsoft.Xna.Framework.Media;
 using RestSharp;
+using RestSharp.Deserializers;
 using WindowsPhoneApplication1;
 
 #endregion
@@ -36,6 +42,7 @@ namespace CSE520S.Rover {
         private bool cameraInUse;
         private bool cameraInitialized;
         private GeoPosition<GeoCoordinate> currentCoordinate;
+        private string weather = "";
 
         /// <summary>
         /// This sample receives data from the Location Service and displays the geographic coordinates of the device.
@@ -252,11 +259,26 @@ namespace CSE520S.Rover {
         }
 
         private void UploadImage(string latitude, string longitude, string fileName, byte[] readBuffer) {
+            GatherWeatherData(latitude, longitude);
+            var resourceXml = "";
+            while (resourceXml == string.Empty || resourceXml != weather) {
+                resourceXml = weather;
+            }
+            XDocument xDocument = XDocument.Parse(resourceXml);
+            IEnumerable<XElement> currentConditions = xDocument.Descendants("current_condition");
+            var temperature = (from currentCondtion in currentConditions select currentCondtion.Element("temp_F").Value).Single();
+            var condition = (from currentCondtion in currentConditions select currentCondtion.Element("weatherDesc").Value).Single();
+            var pressure = (from currentCondtion in currentConditions select currentCondtion.Element("pressure").Value).Single();
+            var humidity = (from currentCondtion in currentConditions select currentCondtion.Element("humidity").Value).Single();
+
             var restClient = new RestClient {BaseUrl = "http://ec2-107-20-224-204.compute-1.amazonaws.com/node"};
             var restRequest =new RestRequest(Method.POST)
                                 .AddFile("file", readBuffer, fileName)
-                                .AddParameter("type", "light")
-                                .AddParameter("value", 1.0)
+                                .AddParameter("light", 1.0)
+                                .AddParameter("temperature", temperature)
+                                .AddParameter("condition", condition)
+                                .AddParameter("humidity", humidity)
+                                .AddParameter("pressure", pressure)
                                 .AddParameter("lat", latitude)
                                 .AddParameter("lon", longitude);
             var callback = new Action<RestResponse>(delegate { });
@@ -266,6 +288,28 @@ namespace CSE520S.Rover {
                                                               DebugTextBlock.Text = "posted";
                                                           }
                                                       });
+        }
+
+        private string GetValueOfElement(string resourceXml, string element){
+            string startElement = "<"+element+">";
+            string endElement = "</"+element+">";
+            int start = resourceXml.IndexOf(startElement) + startElement.Count();
+            int end = resourceXml.IndexOf(endElement);
+            return resourceXml.Substring(start, end - start);
+        }
+
+        private void GatherWeatherData(string latitude, string longitude) {
+            var restClient = new RestClient { BaseUrl = "http://free.worldweatheronline.com/feed/weather.ashx" };
+            var weatherParameter = string.Format("{0},{1}", latitude, longitude);
+            //var weatherParameter = "45.50000,-73.58300";
+            var restRequest = new RestRequest(Method.GET)
+                .AddParameter("key", "bb17f4b95c050309113011")
+                .AddParameter("q", weatherParameter);
+            
+            Action<RestResponse> callback = response => {
+                                                weather = response.Content;
+                                            }; 
+            restClient.ExecuteAsync(restRequest, callback);
         }
 
 
@@ -331,5 +375,6 @@ namespace CSE520S.Rover {
         }
 
         #endregion
+
     }
 }
