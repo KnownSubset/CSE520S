@@ -49,7 +49,7 @@ var updateDatabase = function (elements){
 			client.end();
 			return;
 		}		
-		client.query("insert into sensor Set light = ?, temperature = ?,condition = ?,humidity = ?,pressure = ?, lat = ?, lon = ?" , [elements.light, elements.temperature,elements.condition,elements.humidity, elements.pressure,elements.lat, elements.lon]);		
+		client.query("insert into sensor Set light = ?, temperature = ?,conditions = ?,humidity = ?,pressure = ?, lat = ?, lon = ?" , [elements.light, elements.temperature,elements.condition,elements.humidity, elements.pressure,elements.lat, elements.lon]);		
 	});    
 }
 
