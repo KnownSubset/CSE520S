@@ -48,22 +48,20 @@ var updateDatabase = function (elements){
 			console.log('ClientConnectionReady Error: ' + error.message);
 			client.end();
 			return;
-		}
-		client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , [elements.type, elements.value, elements.lat, elements.lon]);
+		}		
+		client.query("insert into sensor Set light = ?, temperature = ?,conditions = ?,humidity = ?,pressure = ?, lat = ?, lon = ?" , [elements.light, elements.temperature,elements.condition,elements.humidity, elements.pressure,elements.lat, elements.lon]);		
 	});    
 }
 
 var retrieveData = function (request, response){
     var items = new Array();
-    var params = url.parse(request.url).query;
-    var type = params.split('=')[1];
     client.query('USE cse520S', function(error, results) {
         if(error) {
             console.log('ClientConnectionReady Error: ' + error.message);
             client.end();
             return;
         }
-        client.query("SELECT * FROM sensor where type='"+type+"'", function selectSensorData(error, results, fields) {
+        client.query("SELECT * FROM sensor ", function selectSensorData(error, results, fields) {
             if (error) {
                 console.log('GetData Error: ' + error.message);
                 client.end();
@@ -72,8 +70,13 @@ var retrieveData = function (request, response){
             for (var i = 0; i < results.length; i++){
                 items.push({latitude:results[i]['lat'],
                             longitude:results[i]['lon'],
-                            type:results[i]['type'],
-                            value:results[i]['value']});
+                            light:results[i]['light'],
+                            humidity:results[i]['humidity'],
+                            pressure:results[i]['pressure'],
+                            condition:results[i]['condition'],
+                            temperature:results[i]['temperature'],
+                            time:results[i]['time']
+                            });
             }
             var sensorData = {items: items};
             var body = JSON.stringify(sensorData);
