@@ -54,11 +54,12 @@
       title:data.message,
       icon: image
     });
+	//This is the infobox stuff
       	var con = "";
 	if (data.type != "light") {
 	    con = data.type + ': ' + data.value + "<br>Time: "+data.time
 	} else {
-	    con = "<img src=\"images/"+data.value+".jpg\" /><br>Time: "+data.time
+	    con = "<img src=\"images/"+data.latitude+data.longitude+"_th.jpg\" /><br>Time: "+data.time
 	}
 	marker.infowindow = new google.maps.InfoWindow({
 	      content: con

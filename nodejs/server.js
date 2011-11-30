@@ -49,17 +49,19 @@ var updateDatabase = function (elements){
 			client.end();
 			return;
 		}
-		$.ajax({
-                url: "http://api.wunderground.com/api/8f09d4b925278b46/geolookup/conditions/forecast/q/"+elements.lat+","+elements.lon+".json",
-                dataType: "jsonp",
-                success: function(parsed_json) {
-                        var temp_f = parsed_json['current_observation']['temp_f'];
-                        var hum = parsed_json['current_observation']['relative_humidity'];
-                        var pres = parsed_json['current_observation']['pressure_in'];
+		var options = {
+			host: "www.google.com"
+			port: 80
+			path: "ig/api?weather=,,," + elements.lat + "," + elements.long
+		}
+	
+		http.get(options, function(res) {
+			var xmlDoc = libxmljs.parseXmlString(res);
+			var temp_f = xmlDoc.get(/xml_api_reply/weather/current_conditions/temp_f/@data);
+			var hum = xmlDoc.get(/xml_api_reply/weather/current_conditions/humidity/@data);
 			client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , ["heat", temp_f, elements.lat, elements.lon]);
 			client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , ["humid", hum, elements.lat, elements.lon]);
-			client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , ["pressure", pres, elements.lat, elements.lon]);
-		}
+			//client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , ["pressure", pres, elements.lat, elements.lon]);
 		});
 		client.query("insert into sensor Set type = ?, value = ?, lat = ?, lon = ?" , [elements.type, elements.value, elements.lat, elements.lon]);	
 	});    
