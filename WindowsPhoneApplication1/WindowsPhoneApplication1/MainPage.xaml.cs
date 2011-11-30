@@ -267,7 +267,7 @@ namespace CSE520S.Rover {
 
             XDocument xDocument = XDocument.Parse(resourceXml);
             IEnumerable<XElement> currentConditions = xDocument.Descendants("current_condition");
-            var tempature = (from currentCondtion in currentConditions select currentCondtion.Element("temp_F").Value).Single();
+            var temperature = (from currentCondtion in currentConditions select currentCondtion.Element("temp_F").Value).Single();
             var condition = (from currentCondtion in currentConditions select currentCondtion.Element("weatherDesc").Value).Single();
             var pressure = (from currentCondtion in currentConditions select currentCondtion.Element("pressure").Value).Single();
             var humidity = (from currentCondtion in currentConditions select currentCondtion.Element("humidity").Value).Single();
@@ -275,7 +275,7 @@ namespace CSE520S.Rover {
             var restRequest =new RestRequest(Method.POST)
                                 .AddFile("file", readBuffer, fileName)
                                 .AddParameter("light", 1.0)
-                                .AddParameter("tempatue", tempature)
+                                .AddParameter("temperature", temperature)
                                 .AddParameter("condition", condition)
                                 .AddParameter("humidity", humidity)
                                 .AddParameter("pressure", pressure)
