@@ -54,7 +54,7 @@
       title:data.message,
       icon: image
     });
-      	var con = "<img src=\"images/"+data.value+".jpg\" />" + 
+      	var con = "<img src=\"images/"+data.latitude+data.longitude+"_th.jpg\" />" + 
 				  "<br>Time: "+data.time+
 				  "<br>Conditions: "+data.condition+
 				  "<br>Temperature: "+data.temperature+
@@ -79,12 +79,12 @@
       success: function( data ) {
 	drawData(data.items, map);
 	var id = getIntervalIdForType(type);
-	timeoutIds[id] = setTimeout(function(){
+	/*timeoutIds[id] = setTimeout(function(){
 	    $(getArrayForType(type)).each(function(){
 	       this.setMap(null);
 	     });
 	    loadData(map, type);
-	  },10000);
+	  },10000);*/
       }
     });
   }
