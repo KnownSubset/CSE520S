@@ -264,13 +264,13 @@ namespace CSE520S.Rover {
             while (resourceXml == string.Empty || resourceXml != weather) {
                 resourceXml = weather;
             }
-
             XDocument xDocument = XDocument.Parse(resourceXml);
             IEnumerable<XElement> currentConditions = xDocument.Descendants("current_condition");
             var temperature = (from currentCondtion in currentConditions select currentCondtion.Element("temp_F").Value).Single();
             var condition = (from currentCondtion in currentConditions select currentCondtion.Element("weatherDesc").Value).Single();
             var pressure = (from currentCondtion in currentConditions select currentCondtion.Element("pressure").Value).Single();
             var humidity = (from currentCondtion in currentConditions select currentCondtion.Element("humidity").Value).Single();
+
             var restClient = new RestClient {BaseUrl = "http://ec2-107-20-224-204.compute-1.amazonaws.com/node"};
             var restRequest =new RestRequest(Method.POST)
                                 .AddFile("file", readBuffer, fileName)
@@ -300,10 +300,8 @@ namespace CSE520S.Rover {
 
         private void GatherWeatherData(string latitude, string longitude) {
             var restClient = new RestClient { BaseUrl = "http://free.worldweatheronline.com/feed/weather.ashx" };
-            latitude = latitude.Replace(".", "");
-            longitude = longitude.Replace(".", "");
-            //var weatherParameter = string.Format("{0},{1}", latitude, longitude);
-            var weatherParameter = "45.50000,-73.58300";
+            var weatherParameter = string.Format("{0},{1}", latitude, longitude);
+            //var weatherParameter = "45.50000,-73.58300";
             var restRequest = new RestRequest(Method.GET)
                 .AddParameter("key", "bb17f4b95c050309113011")
                 .AddParameter("q", weatherParameter);

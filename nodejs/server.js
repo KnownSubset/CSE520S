@@ -74,7 +74,8 @@ var retrieveData = function (request, response){
                             humidity:results[i]['humidity'],
                             pressure:results[i]['pressure'],
                             condition:results[i]['condition'],
-                            temperature:results[i]['temperature']
+                            temperature:results[i]['temperature'],
+                            time:results[i]['time']
                             });
             }
             var sensorData = {items: items};
