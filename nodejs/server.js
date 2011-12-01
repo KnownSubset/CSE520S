@@ -57,13 +57,15 @@ var updateDatabase = function (elements){
 				console.log(body);
                 //Send the body param as the HTML code we will parse in jsdom
 				//also tell jsdom to attach jQuery in the scripts and loaded from jQuery.com
-				var weather = JSON.parse(body).current_condition;
+				var weather = JSON.parse(body).data.current_condition;
 				console.log(weather);
 				var conditions = new Array();
-				for (var condition in weather.weatherDesc){
+				for (i=0; i<weather.weatherDesc.length; i++){
+					var condition = weather.weatherDesc[i];
 					conditions.push(condition.value);
 				}
-				client.query("insert into sensor Set light = ?, temperature = ?,conditions = ?,humidity = ?,pressure = ?, lat = ?, lon = ?" , [elements.light, weather.temp_F,condition.join(','),weather.humidity, weather.pressure,elements.lat, elements.lon]);
+				client.query("insert into sensor Set light = ?, temperature = ?,conditions = ?,humidity = ?,pressure = ?, lat = ?, lon = ?" , 
+				[elements.light, weather.temp_F,conditions.join(','),weather.humidity, weather.pressure,elements.lat, elements.lon]);
 		});
 		
 
