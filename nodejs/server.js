@@ -55,17 +55,17 @@ var updateDatabase = function (elements){
 		request({uri: weatherURL}, function(err, response, body){
 				//Just a basic error check
 	                if(err && response.statusCode !== 200){console.log('Request error.');}
-			console.log(body);
-			var currentConditions = JSON.parse(body).data.current_condition[0];
+			var weather = JSON.parse(body).data.current_condition[0];
 			var conditions = new Array();
-			for (i=0; i<conditions.weatherDesc.length; i++){
+			console.log(weather);
+			for (i=0; i<weather.weatherDesc.length; i++){
 				var condition = weather.weatherDesc[i];
 				conditions.push(condition.value);
 			}
         	        //Send the body param as the HTML code we will parse in jsdom
 			//also tell jsdom to attach jQuery in the scripts and loaded from jQuery.com
 				
-			client.query("insert into sensor Set light = ?, temperature = ?,conditions = ?,humidity = ?,pressure = ?, lat = ?, lon = ?" , [elements.light, weather.temperature,weather.condition,weather.humidity, weather.pressure,elements.lat, elements.lon]);		
+			client.query("insert into sensor Set light = ?, temperature = ?,conditions = ?,humidity = ?,pressure = ?, lat = ?, lon = ?" , [0, weather.temp_F,conditions.join(','),weather.humidity, weather.pressure,elements.lat, elements.lon]);		
 		});
 
 	});    
