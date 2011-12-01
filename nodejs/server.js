@@ -49,7 +49,18 @@ var updateDatabase = function (elements){
 			client.end();
 			return;
 		}		
-		client.query("insert into sensor Set light = ?, temperature = ?,conditions = ?,humidity = ?,pressure = ?, lat = ?, lon = ?" , [elements.light, elements.temperature,elements.condition,elements.humidity, elements.pressure,elements.lat, elements.lon]);		
+		var weather = {};
+		var weatherURL = 'http://free.worldweatheronline.com/feed/weather.ashx?format=json&key=bb17f4b95c050309113011&q=' + elements.lat + ',' + elements.lon;
+		request({uri: weatherURL}, function(err, response, body){
+				//Just a basic error check
+                if(err && response.statusCode !== 200){console.log('Request error.');}
+				console.log(body);
+                //Send the body param as the HTML code we will parse in jsdom
+				//also tell jsdom to attach jQuery in the scripts and loaded from jQuery.com
+				
+		});
+		client.query("insert into sensor Set light = ?, temperature = ?,conditions = ?,humidity = ?,pressure = ?, lat = ?, lon = ?" , [elements.light, weather.temperature,weather.condition,weather.humidity, weather.pressure,elements.lat, elements.lon]);		
+
 	});    
 }
 
