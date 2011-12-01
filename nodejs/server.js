@@ -3,6 +3,7 @@ var url = require('url');
 var express = require('express')
   , form = require('connect-form');
 var mysql = require('mysql');
+var request = request('request');
 var client = mysql.createClient({
   user: 'root',
   password: ''
@@ -49,7 +50,6 @@ var updateDatabase = function (elements){
 			client.end();
 			return;
 		}		
-		var weather = {};
 		var weatherURL = 'http://free.worldweatheronline.com/feed/weather.ashx?format=json&key=bb17f4b95c050309113011&q=' + elements.lat + ',' + elements.lon;
 		request({uri: weatherURL}, function(err, response, body){
 				//Just a basic error check
@@ -57,9 +57,15 @@ var updateDatabase = function (elements){
 				console.log(body);
                 //Send the body param as the HTML code we will parse in jsdom
 				//also tell jsdom to attach jQuery in the scripts and loaded from jQuery.com
-				
+				var weather = JSON.parse(body).current_condition;
+				console.log(weather);
+				var conditions = new Array();
+				for (var condition in weather.weatherDesc){
+					conditions.push(condition.value);
+				}
+				client.query("insert into sensor Set light = ?, temperature = ?,conditions = ?,humidity = ?,pressure = ?, lat = ?, lon = ?" , [elements.light, weather.temp_F,condition.join(','),weather.humidity, weather.pressure,elements.lat, elements.lon]);
 		});
-		client.query("insert into sensor Set light = ?, temperature = ?,conditions = ?,humidity = ?,pressure = ?, lat = ?, lon = ?" , [elements.light, weather.temperature,weather.condition,weather.humidity, weather.pressure,elements.lat, elements.lon]);		
+		
 
 	});    
 }
