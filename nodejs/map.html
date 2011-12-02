@@ -10,11 +10,11 @@
 <script type="text/javascript" src="js/google.maps.api.3.0.js"></script>
 <script type="text/javascript" src="js/jquery-1.6.4.min.js"></script>
 <script type="text/javascript">
-  var heats = new Array();
-  var humids = new Array();
-  var images = new Array();
+  //var heats = new Array();
+  //var humids = new Array();
+  //var images = new Array();
   var pressures = new Array();
-  var timeoutIds = [0,0,0,0];
+  var timeout = 0;
 
   $(document).ready(function(){
     var latlng = new google.maps.LatLng(38.6495524, -90.3300202);//WASH U
@@ -25,16 +25,23 @@
     };
     var $map = $("div#map_canvas");
     var map = new google.maps.Map($map[0], myOptions);
+    loadData(map);
     $("div#checkboxes input:checkbox").click(function(){
 	var checkbox = $(this);	
 	if (checkbox.is(':checked')) {
-	    loadData(map, checkbox.attr("id"));
+	    //loadData(map);
+	    timeout = setTimeout(function(){
+            $(pressures).each(function() {
+		this.setMap(null);
+	    });
+            loadData(map);
+          },3000);
 	} else {
-	  $(getArrayForType(checkbox.attr("id"))).each(function(){
-	     this.setMap(null);
-	  });
-	  var intervalId = getIntervalIdForType(checkbox.attr("id"));
-	  clearTimeout(timeoutIds[intervalId]);
+	  //$(getArrayForType(checkbox.attr("id"))).each(function(){
+	     //this.setMap(null);
+	  //});
+	  //var intervalId = getIntervalIdForType(checkbox.attr("id"));
+	  clearTimeout(timeout);
 	}
 
     });
@@ -45,7 +52,7 @@
     });
   }
   addMarker = function(data, map){
-    var image = getImage(data);
+    var image = "images/circle_blue.png";
     var latLng = new google.maps.LatLng(data.latitude,data.longitude);
     var marker = new google.maps.Marker({
       position: latLng, 
@@ -53,7 +60,6 @@
       title:data.message,
       icon: image
     });
-
       	var con = "<img src=\"images/"+data.latitude+data.longitude+"_th.jpg\" />" + 
 				  "<br>Time: "+data.time+
 				  "<br>Conditions: "+data.condition+
@@ -68,26 +74,27 @@
     google.maps.event.addListener(marker, 'click', function() {
       marker.infowindow.open(map,marker);
     });
-    getArrayForType(data.type).push(marker);
+    pressures.push(marker);
   }
-  loadData = function(map, type){
-    var url = "http://ec2-107-20-224-204.compute-1.amazonaws.com/node/?type=" + type;
+  loadData = function(map){
+    var url = "http://ec2-107-20-224-204.compute-1.amazonaws.com/node/?type=all";
     $.ajax({
       accepts : "text/json",
       dataType : "json",
       url: url,
       success: function( data ) {
 	drawData(data.items, map);
-	var id = getIntervalIdForType(type);
-	/*timeoutIds[id] = setTimeout(function(){
-	    $(getArrayForType(type)).each(function(){
+	//var id = getIntervalIdForType(type);
+	//timeout = setTimeout(function(){
+	    /*$(getArrayForType(type)).each(function(){
 	       this.setMap(null);
 	     });
-	    loadData(map, type);
-	  },10000);*/
+	    loadData(map);*/
+	  //},10000);
       }
     });
   }
+/*
   getArrayForType = function(type){
     if (type == "heat"){
       return heats;
@@ -118,16 +125,16 @@
       image = 'images/circle_orange.png';
     }
     return image;
-  }
+  }*/
 
 </script>
 </head>
 <body>
-  <div id="checkboxes">
-    <label for="light">Images</label><input id="light" type="checkbox"></input>
-    <label for="heat">Heat</label><input id="heat" type="checkbox"></input>
-    <label for="humid">Humidity</label><input id="humid" type="checkbox"></input>
-    <label for="pressure">Pressure</label><input id="pressure" type="checkbox"></input>
+<div id="checkboxes">
+   <!-- <label for="light">Images</label><input id="light" type="checkbox"></input> -->
+   <!-- <label for="heat">Heat</label><input id="heat" type="checkbox"></input> -->
+   <!-- <label for="humid">Humidity</label><input id="humid" type="checkbox"></input>-->
+    <label for="refresh">AutoRefresh</label><input id="refresh" type="checkbox"></input>
   </div>
   <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>
