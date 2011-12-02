@@ -13,7 +13,6 @@ var app = express.createServer(
   form({ keepExtensions: true })
 );
 app.get('/', function(request, response){
-        console.log('GET');
         retrieveData(request, response);
 	});
 	
@@ -31,8 +30,6 @@ var postData = function (request,next){
 			updateDatabase(fields);
 			file = files.file;
 		}
-		console.log(fields);
-		console.log(file);
 		moveFile(file);
 	});
 }
@@ -57,7 +54,6 @@ var updateDatabase = function (elements){
 	                if(err && response.statusCode !== 200){console.log('Request error.');}
 			var weather = JSON.parse(body).data.current_condition[0];
 			var conditions = new Array();
-			console.log(weather);
 			for (i=0; i<weather.weatherDesc.length; i++){
 				var condition = weather.weatherDesc[i];
 				conditions.push(condition.value);
@@ -65,7 +61,7 @@ var updateDatabase = function (elements){
         	        //Send the body param as the HTML code we will parse in jsdom
 			//also tell jsdom to attach jQuery in the scripts and loaded from jQuery.com
 				
-			client.query("insert into sensor Set light = ?, temperature = ?,conditions = ?,humidity = ?,pressure = ?, lat = ?, lon = ?" , [0, weather.temp_F,conditions.join(','),weather.humidity, weather.pressure,elements.lat, elements.lon]);		
+			client.query("insert into sensor Set light = ?, temperature = ?,conditions = ?,humidity = ?,pressure = ?, lat = ?, lon = ?" , [0, weather.temp_F,weather.weatherDesc[0].value,weather.humidity, weather.pressure,elements.lat, elements.lon]);		
 		});
 
 	});    
