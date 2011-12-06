@@ -1,0 +1,15 @@
+
+sudo yum install mysql-server
+sudo yum install git
+sudo yum install apache
+sudo yum search apache
+sudo yum install httpd
+
+curl http://nodejs.org/dist/v0.6.3/node-v0.6.3.tar.gz
+
+curl http://npmjs.org/install.sh | sh
+npm install express
+npm install connect-form
+npm install qs
+npm install mysql
+npm install request

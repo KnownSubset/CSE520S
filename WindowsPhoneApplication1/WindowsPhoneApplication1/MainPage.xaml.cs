@@ -19,8 +19,10 @@ using System.IO;
 using System.IO.IsolatedStorage;
 using System.Windows;
 using Microsoft.Devices;
+using Microsoft.Devices.Sensors;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Media;
 using RestSharp;
 
@@ -34,6 +36,9 @@ namespace CSE520S.Rover {
         private bool cameraInUse;
         private bool cameraInitialized;
         private GeoPosition<GeoCoordinate> currentCoordinate;
+        private Accelerometer accelerometer;
+        private float zValue = 0.0f;
+        private Vector3 previousAcceleration;
 
         /// <summary>
         /// This sample receives data from the Location Service and displays the geographic coordinates of the device.
@@ -63,6 +68,7 @@ namespace CSE520S.Rover {
         private void LowButtonClick(object sender, EventArgs e) {
             // Start data acquisition from the Location Service, low accuracy
             accuracyText = "default accuracy";
+            StartAccelerometerService();
             StartLocationService();
             StartCameraService();
         }
@@ -75,6 +81,7 @@ namespace CSE520S.Rover {
         private void HighButtonClick(object sender, EventArgs e) {
             // Start data acquisition from the Location Service, high accuracy
             accuracyText = "high accuracy";
+            StartAccelerometerService();
             StartLocationService();
             StartCameraService();
         }
@@ -90,7 +97,7 @@ namespace CSE520S.Rover {
             double latitude = random.NextDouble()*90;
             double longitude = random.NextDouble()*-180;
             var geoCoordinate = new GeoCoordinate(latitude, longitude);
-            var geoPosition = new GeoPosition<GeoCoordinate>(new DateTimeOffset(),geoCoordinate );
+            var geoPosition = new GeoPosition<GeoCoordinate>(new DateTimeOffset(), geoCoordinate);
             var geoPositionChangedEventArgs = new GeoPositionChangedEventArgs<GeoCoordinate>(geoPosition);
             MyPositionChanged(geoPositionChangedEventArgs);
         }
@@ -98,6 +105,8 @@ namespace CSE520S.Rover {
         #endregion
 
         #region Application logic
+
+        #region Gps logic
 
         /// <summary>
         /// Helper method to start up the location data acquisition
@@ -197,8 +206,7 @@ namespace CSE520S.Rover {
                         try {
                             camera.Focus();
                             DebugTextBlock.Text = "focus";
-                        }
-                        catch (Exception exception) {
+                        } catch (Exception exception) {
                             DebugTextBlock.Text = exception.Message;
                         }
                     }
@@ -206,6 +214,40 @@ namespace CSE520S.Rover {
             }
         }
 
+        #endregion
+
+        #region Accelerometer logic
+
+        /// <summary>
+        /// Helper method to start up the location data acquisition
+        /// </summary>
+        private void StartAccelerometerService() {
+            accelerometer = new Accelerometer();
+            
+            // Add event handlers for StatusChanged and PositionChanged events
+            accelerometer.CurrentValueChanged += AccelerometerValueChanged;
+            accelerometer.TimeBetweenUpdates = new TimeSpan(100);
+            // Start data acquisition
+            accelerometer.Start();
+        }
+
+
+        /// <summary>
+        /// Custom method called from the PositionChanged event handler
+        /// </summary>
+        /// <param name="e"></param>
+        private void AccelerometerValueChanged(object sender, SensorReadingEventArgs<AccelerometerReading> e) {
+            var accelerometerReading = e.SensorReading;
+            var acceleration = accelerometerReading.Acceleration;
+            if (accelerometer.IsDataValid && previousAcceleration != acceleration){
+                zValue += acceleration.Z - previousAcceleration.Z;
+                previousAcceleration = acceleration;
+            }
+        }
+
+        #endregion
+
+        #region Camera logic
 
         // Update the UI if initialization succeeds.
         private void cam_Initialized(object sender, CameraOperationCompletedEventArgs e) {
@@ -225,9 +267,8 @@ namespace CSE520S.Rover {
             try {
                 // Save thumbnail as JPEG to isolated storage.
                 var bytes = new List<byte>();
-                using (IsolatedStorageFile isStore = IsolatedStorageFile.GetUserStoreForApplication())
-                {
-                    using (IsolatedStorageFileStream targetStream = isStore.OpenFile(fileName, FileMode.Create,FileAccess.Write)) {
+                using (IsolatedStorageFile isStore = IsolatedStorageFile.GetUserStoreForApplication()) {
+                    using (IsolatedStorageFileStream targetStream = isStore.OpenFile(fileName, FileMode.Create, FileAccess.Write)) {
                         // Initialize the buffer for 4KB disk pages.
                         var readBuffer = new byte[4096];
                         int bytesRead;
@@ -237,40 +278,18 @@ namespace CSE520S.Rover {
                             targetStream.Write(readBuffer, 0, bytesRead);
                             bytes.AddRange(readBuffer);
                         }
-                        bytes.RemoveRange((int)targetStream.Length, (int)(bytes.Count - targetStream.Length));
+                        bytes.RemoveRange((int) targetStream.Length, (int) (bytes.Count - targetStream.Length));
                     }
                     UploadImage(latitude, longitude, fileName, bytes.ToArray());
                 }
-            }catch (Exception exception){
+            } catch (Exception exception) {
                 DebugTextBlock.Text = exception.Message;
-            }finally {
+            } finally {
                 // Close image stream
                 e.ImageStream.Close();
             }
         }
 
-        private void UploadImage(string latitude, string longitude, string fileName, byte[] readBuffer) {
-            var restClient = new RestClient {BaseUrl = "http://ec2-107-20-224-204.compute-1.amazonaws.com/node"};
-            var restRequest =new RestRequest(Method.POST)
-                                .AddFile("file", readBuffer, fileName)
-                                .AddParameter("light", 1.0)
-                                /*.AddParameter("temperature", temperature)
-                                .AddParameter("condition", condition)
-                                .AddParameter("humidity", humidity)
-                                .AddParameter("pressure", pressure)*/
-                                .AddParameter("lat", latitude)
-                                .AddParameter("lon", longitude);
-            var callback = new Action<RestResponse>(delegate { });
-            restClient.ExecuteAsync(restRequest, callback);
-            Deployment.Current.Dispatcher.BeginInvoke(() => {
-                                                          lock (this) {
-                                                              DebugTextBlock.Text = "posted";
-                                                          }
-                                                      });
-        }
-
-
-        // Informs when full resolution picture has been taken, saves to local media library and isolated storage.
         private void cam_CaptureImageAvailable(object sender, ContentReadyEventArgs e) {
             var latitude = currentCoordinate.Location.Latitude.ToString("0.00000");
             var longitude = currentCoordinate.Location.Longitude.ToString("0.00000");
@@ -288,20 +307,19 @@ namespace CSE520S.Rover {
                 using (IsolatedStorageFile isStore = IsolatedStorageFile.GetUserStoreForApplication()) {
                     using (IsolatedStorageFileStream targetStream = isStore.OpenFile(fileName, FileMode.Create, FileAccess.Write)) {
                         // Initialize the buffer for 4KB disk pages.
-                            var readBuffer = new byte[4096];
-                            int bytesRead;
-
-                            // Copy the image to isolated storage. 
-                            while ((bytesRead = e.ImageStream.Read(readBuffer, 0, readBuffer.Length)) > 0) {
-                                targetStream.Write(readBuffer, 0, bytesRead);
-                                bytes.AddRange(readBuffer);
-                            }
-                            bytes.RemoveRange((int)targetStream.Length, (int) (bytes.Count - targetStream.Length));
+                        var readBuffer = new byte[4096];
+                        int bytesRead;
+                        // Copy the image to isolated storage. 
+                        while ((bytesRead = e.ImageStream.Read(readBuffer, 0, readBuffer.Length)) > 0) {
+                            targetStream.Write(readBuffer, 0, bytesRead);
+                            bytes.AddRange(readBuffer);
                         }
+                        bytes.RemoveRange((int) targetStream.Length, (int) (bytes.Count - targetStream.Length));
+                    }
                 }
-            }catch (Exception exception){
+            } catch (Exception exception) {
                 DebugTextBlock.Text = exception.Message;
-            }finally {
+            } finally {
                 // Close image stream
                 e.ImageStream.Close();
             }
@@ -309,29 +327,51 @@ namespace CSE520S.Rover {
 
         // Informs when full resolution picture has been taken, saves to local media library and isolated storage.
         private void cam_CaptureImageCompleted(object sender, ContentReadyEventArgs e) {
-            Deployment.Current.Dispatcher.BeginInvoke(() => {
-                                                          lock (this) {
-                                                              DebugTextBlock.Text = "complete";
-                                                              cameraInUse = false;
-                                                          }
-                                                      });
+            Action action = () => {
+                                lock (this) {
+                                    DebugTextBlock.Text = "complete";
+                                    cameraInUse = false;
+                                }
+                            };
+            Deployment.Current.Dispatcher.BeginInvoke(action);
         }
 
         private void cam_AutoFocusCompleted(object sender, CameraOperationCompletedEventArgs e) {
+            Action action = () => {
+                                lock (this) {
+                                    try {
+                                        camera.CaptureImage();
+                                        DebugTextBlock.Text = "capture";
+                                    } catch (Exception exception) {
+                                        DebugTextBlock.Text = exception.Message;
+                                    }
+                                }
+                            };
+            Deployment.Current.Dispatcher.BeginInvoke(action);
+        }
+
+        #endregion
+
+
+        // Informs when full resolution picture has been taken, saves to local media library and isolated storage.
+        private void UploadImage(string latitude, string longitude, string fileName, byte[] readBuffer) {
+            var restClient = new RestClient {BaseUrl = "http://ec2-107-20-224-204.compute-1.amazonaws.com/node"};
+            var restRequest = new RestRequest(Method.POST)
+                .AddFile("file", readBuffer, fileName)
+                .AddParameter("zValue", zValue)
+                .AddParameter("light", 1.0)
+                .AddParameter("lat", latitude)
+                .AddParameter("lat", latitude)
+                .AddParameter("lon", longitude);
+            var callback = new Action<RestResponse>(delegate { });
+            restClient.ExecuteAsync(restRequest, callback);
             Deployment.Current.Dispatcher.BeginInvoke(() => {
                                                           lock (this) {
-                                                              try {
-                                                                  camera.CaptureImage();
-                                                                  DebugTextBlock.Text = "capture";
-                                                              }
-                                                              catch (Exception exception) {
-                                                                  DebugTextBlock.Text = exception.Message;
-                                                              }
+                                                              DebugTextBlock.Text = String.Format("posted @ {0}", zValue);
                                                           }
                                                       });
         }
 
         #endregion
-
     }
 }
