@@ -10,47 +10,65 @@
 <script type="text/javascript" src="js/google.maps.api.3.0.js"></script>
 <script type="text/javascript" src="js/jquery-1.6.4.min.js"></script>
 <script type="text/javascript">
-  //var heats = new Array();
-  //var humids = new Array();
-  //var images = new Array();
   var pressures = new Array();
   var timeout = 0;
-
+  var prev = null;
+  var prevDate = null;
+  var routes = new Array();
+	
   $(document).ready(function(){
-    var latlng = new google.maps.LatLng(38.6495524, -90.3300202);//WASH U
+    //Load and initialize the map
+    var latlng = new google.maps.LatLng(38.6497524, -90.3100202);//WASH U
     var myOptions = {
-      zoom: 13,
+      zoom: 17,
       center: latlng,
       mapTypeId: google.maps.MapTypeId.ROADMAP
     };
     var $map = $("div#map_canvas");
     var map = new google.maps.Map($map[0], myOptions);
     loadData(map);
+    //handles the autorefresh functionality
     $("div#checkboxes input:checkbox").click(function(){
-	var checkbox = $(this);	
+	var checkbox = $(this);
+    if(checkbox.attr('id') == 'refresh') {	
 	if (checkbox.is(':checked')) {
-	    //loadData(map);
-	    timeout = setTimeout(function(){
+	    //need to set the timeout
+	    timeout = setInterval(function(){
             $(pressures).each(function() {
 		this.setMap(null);
 	    });
             loadData(map);
           },3000);
 	} else {
-	  //$(getArrayForType(checkbox.attr("id"))).each(function(){
-	     //this.setMap(null);
-	  //});
-	  //var intervalId = getIntervalIdForType(checkbox.attr("id"));
-	  clearTimeout(timeout);
+	  //no autorefresh
+	  clearInterval(timeout);
 	}
+    }
+    else {
+	if(checkbox.is(':checked')) {
+	    //display routes
+		$(routes).each(function() {
+			this.setMap(map);
+		});
+	} else {
+		$(routes).each(function() {
+			this.setMap(null);
+			prevDate = null;
+		});
+	}
+}
+
+        
 
     });
    });
+  //loads the points on the initial map
   drawData = function (data, map) {
     $(data).each(function($this){
       addMarker(this, map);
     });
   }
+  //This function recieves the data and places the markers and info boxes on the map
   addMarker = function(data, map){
     var image = "images/circle_blue.png";
     var latLng = new google.maps.LatLng(data.latitude,data.longitude);
@@ -60,14 +78,20 @@
       title:data.message,
       icon: image
     });
-      	var con = "<img src=\"images/"+data.latitude+data.longitude+"_th.jpg\" />" + 
-				  "<br>Time: "+data.time+
-				  "<br>Conditions: "+data.condition+
-				  "<br>Temperature: "+data.temperature+
-				  "<br>Humidity: "+data.humidity+
-				  "<br>Pressure: "+data.pressure+
-				  "<br>Light: "+data.light;
+	//corrects the missing image bug
+	lat = data.latitude.toFixed(5);
+	longi = data.longitude.toFixed(5);
+	var currDate = new Date(data.time);
+	var imgFile = "images/"+lat+longi+"_th.jpg";
+      	var con = "<img src=\"" + imgFile +  "\" height=\"300\" width=\"400\" />" + 
+				  "<br>Time: "+currDate.toDateString()+ " " + currDate.toTimeString() +
+				 // "<br>Conditions: "+data.condition+
+				  "<br>Temperature: "+data.temperature+ "&deg;F" +
+				  "<br>Humidity: "+data.humidity+ "%" +
+				  "<br>Pressure: "+data.pressure+ " mb";
+				 // "<br>Light: "+ computeLuma(imgFile)
 	
+	//create our infowindow
 	marker.infowindow = new google.maps.InfoWindow({
 	      content: con
 	});
@@ -75,7 +99,24 @@
       marker.infowindow.open(map,marker);
     });
     pressures.push(marker);
+    if(prev!=null) {
+	var flightPath = new google.maps.Polyline({
+        path: [prev, latLng],
+    	strokeColor: "#FF0000",
+    	strokeOpacity: 1.0,
+    	strokeWeight: 2
+  });
+  if(prevDate != null && prevDate.valueOf() + 120000 >= currDate.valueOf() ) {
+  //flightPath.setMap(map);
+  routes.push(flightPath);
   }
+}
+    prevDate = currDate;
+    prev = latLng;
+    
+  }
+ 
+  //This function retrieves the data from our SQL server so that it can be added to the map
   loadData = function(map){
     var url = "http://ec2-107-20-224-204.compute-1.amazonaws.com/node/?type=all";
     $.ajax({
@@ -84,57 +125,43 @@
       url: url,
       success: function( data ) {
 	drawData(data.items, map);
-	//var id = getIntervalIdForType(type);
-	//timeout = setTimeout(function(){
-	    /*$(getArrayForType(type)).each(function(){
-	       this.setMap(null);
-	     });
-	    loadData(map);*/
-	  //},10000);
       }
     });
-  }
-/*
-  getArrayForType = function(type){
-    if (type == "heat"){
-      return heats;
-    }else if(type == "humid"){
-      return humids;
-    }else if(type == "pressure"){
-      return pressures;
-    }
-    return images;    	
-  }
-  getIntervalIdForType = function(type){
-    if (type == "heat"){
-      return 0;
-    }else if(type == "humid"){
-      return 1;
-    }else if(type == "pressure"){
-      return 2;
-    }
-    return 3;
-  }
-  getImage = function(data){
-    return 'images/circle_blue.png';
-    if (data.type == "heat"){
-      image = 'images/circle_red.png';
-    }else if(data.type == "humid"){
-      image = 'images/circle_green.png';
-    }else if(data.type == "pressure"){
-      image = 'images/circle_orange.png';
-    }
-    return image;
-  }*/
+ }
 
+/*
+This function attempts to compute luma values for images but is too intensive. It slows the page down a LOT.
+ computeLuma = function(filename) {
+	var img = new Image();
+	img.src = filename;
+	var newCanvas = document.createElement('canvas');
+	newCanvas.height="480";
+	newCanvas.width="640";
+	var ctx = newCanvas.getContext('2d');
+	ctx.drawImage(img, 0, 0);
+
+	imgd = ctx.getImageData(0,0,640,480);
+
+	var pix = imgd.data;
+
+	var luma = 0;
+
+	for( var i = 0; i <= 480; i++) {
+		for( var j = 0; j < 640; j++) {
+			var R = pix[(i*640*4) + (j*4)];
+			var G = pix[(i*640*4) + (j*4) +1];
+			var B = pix[(i*640*4) + (j*4) +2];
+			luma += (R+R+B+G+G+G) / 6;
+		}
+	}
+	return luma / (640 * 480); 	
+} */
 </script>
 </head>
 <body>
 <div id="checkboxes">
-   <!-- <label for="light">Images</label><input id="light" type="checkbox"></input> -->
-   <!-- <label for="heat">Heat</label><input id="heat" type="checkbox"></input> -->
-   <!-- <label for="humid">Humidity</label><input id="humid" type="checkbox"></input>-->
     <label for="refresh">AutoRefresh</label><input id="refresh" type="checkbox"></input>
+    <label for="routes">Routes</label><input id="routes" type="checkbox"></input>
   </div>
   <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>
